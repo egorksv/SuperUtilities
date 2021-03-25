@@ -55,7 +55,7 @@ public class BulkRedactor {
 		}
 	}
 	
-	private void logMessage(String format, Object... params) {
+	protected void logMessage(String format, Object... params) {
 		logMessage(String.format(format, params));
 	}
 	
@@ -69,7 +69,7 @@ public class BulkRedactor {
 		progressUpdatedCallback = callback;
 	}
 	
-	private void fireProgressUpdated(BulkRedactorProgressInfo info) {
+	protected void fireProgressUpdated(BulkRedactorProgressInfo info) {
 		if(progressUpdatedCallback != null) {
 			progressUpdatedCallback.accept(info);
 		}
@@ -82,7 +82,7 @@ public class BulkRedactor {
 	 * @param pageNumber The page number the given match comes from.  Recorded in {@link NuixImageAnnotationRegion} so it knows what page to perform markups on.
 	 * @return A List of annotation region objects representing the coalesced segments.
 	 */
-	private List<NuixImageAnnotationRegion> buildRegionsFromSegments(TextSegmentCollection segments, Rectangle pageRect, int pageNumber){
+	protected List<NuixImageAnnotationRegion> buildRegionsFromSegments(TextSegmentCollection segments, Rectangle pageRect, int pageNumber){
 		List<NuixImageAnnotationRegion> result = new ArrayList<NuixImageAnnotationRegion>();
 		
 		// Group rectangle for each char by line
@@ -261,7 +261,7 @@ public class BulkRedactor {
 					for(NuixImageAnnotationRegion region : entityRegions) {
 						region.setItem(item);
 					}
-					allFoundRegions.addAll(regions);
+					allFoundRegions.addAll(entityRegions);
 					logMessage("Item with GUID %s had %s named entity matches",item.getGuid(),entityRegions.size());
 					for(NuixImageAnnotationRegion region : entityRegions) {
 						matches++;
