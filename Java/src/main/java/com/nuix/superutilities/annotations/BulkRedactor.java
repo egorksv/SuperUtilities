@@ -232,45 +232,59 @@ public class BulkRedactor {
 		
 		for(Item item : scopeItems) {
 			currentIteration += 1;
-			File tempPdf = pdfCache.getPdfPath(item);
-			
-			List<NuixImageAnnotationRegion> regions = findExpressionsInPdfFile(tempPdf, settings.getExpressions());
-			if(regions.size() > 0) {
-				for(NuixImageAnnotationRegion region : regions) {
-					region.setItem(item);
-				}
-				allFoundRegions.addAll(regions);
-				logMessage("Item with GUID %s had %s matches",item.getGuid(),regions.size());
-				for(NuixImageAnnotationRegion region : regions) {
-					matches++;
-					if(settings.getApplyRedactions()) { region.applyRedaction(markupSet); }
-					if(settings.getApplyHighLights()) { region.applyHighlight(markupSet); }
-				}	
-			}
-			
-			//Named entities require that we get matched values, convert those to expressions and then do another pass
-			if (settings.getNamedEntityTypes().size() > 0) {
-				Set<String> entityValues = new HashSet<String>();
-				for(String entityType : settings.getNamedEntityTypes()) {
-					entityValues.addAll(item.getEntities(entityType));
-				}
-				
-				Set<String> entityExpressions = entityValues.stream().map(v -> BulkRedactorSettings.phraseToExpression(v)).collect(Collectors.toSet());
-				List<NuixImageAnnotationRegion> entityRegions = findExpressionsInPdfFile(tempPdf, entityExpressions);
-				if(entityRegions.size() > 0) {
-					for(NuixImageAnnotationRegion region : entityRegions) {
+
+			try {
+				File tempPdf = pdfCache.getPdfPath(item);
+
+				List<NuixImageAnnotationRegion> regions = findExpressionsInPdfFile(tempPdf, settings.getExpressions());
+				if (regions.size() > 0) {
+					for (NuixImageAnnotationRegion region : regions) {
 						region.setItem(item);
 					}
-					allFoundRegions.addAll(entityRegions);
-					logMessage("Item with GUID %s had %s named entity matches",item.getGuid(),entityRegions.size());
-					for(NuixImageAnnotationRegion region : entityRegions) {
+					allFoundRegions.addAll(regions);
+					logMessage("Item with GUID %s had %s matches", item.getGuid(), regions.size());
+					for (NuixImageAnnotationRegion region : regions) {
 						matches++;
-						if(settings.getApplyRedactions()) { region.applyRedaction(markupSet); }
-						if(settings.getApplyHighLights()) { region.applyHighlight(markupSet); }
-					}	
+						if (settings.getApplyRedactions()) {
+							region.applyRedaction(markupSet);
+						}
+						if (settings.getApplyHighLights()) {
+							region.applyHighlight(markupSet);
+						}
+					}
 				}
+
+				//Named entities require that we get matched values, convert those to expressions and then do another pass
+				if (settings.getNamedEntityTypes().size() > 0) {
+					Set<String> entityValues = new HashSet<String>();
+					for (String entityType : settings.getNamedEntityTypes()) {
+						entityValues.addAll(item.getEntities(entityType));
+					}
+
+					Set<String> entityExpressions = entityValues.stream().map(v -> BulkRedactorSettings.phraseToExpression(v)).collect(Collectors.toSet());
+					List<NuixImageAnnotationRegion> entityRegions = findExpressionsInPdfFile(tempPdf, entityExpressions);
+					if (entityRegions.size() > 0) {
+						for (NuixImageAnnotationRegion region : entityRegions) {
+							region.setItem(item);
+						}
+						allFoundRegions.addAll(entityRegions);
+						logMessage("Item with GUID %s had %s named entity matches", item.getGuid(), entityRegions.size());
+						for (NuixImageAnnotationRegion region : entityRegions) {
+							matches++;
+							if (settings.getApplyRedactions()) {
+								region.applyRedaction(markupSet);
+							}
+							if (settings.getApplyHighLights()) {
+								region.applyHighlight(markupSet);
+							}
+						}
+					}
+				}
+			} catch(Exception ex) {
+				logger.error("Exception during item redaction " + item.getName() + ";", ex);
+				item.addTag("RedactionFailure");
 			}
-			
+
 			// Report progress
 			BulkRedactorProgressInfo progressInfo = new BulkRedactorProgressInfo();
 			progressInfo.setCurrent(currentIteration);
